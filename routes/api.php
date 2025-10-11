@@ -11,6 +11,12 @@ use App\Http\Controllers\GradeController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\SubmissionController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\ParentController;
+use App\Http\Controllers\PaymentController;
+
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -117,3 +123,48 @@ Route::middleware('auth:sanctum')->get('/student/attendances', [AttendanceContro
 Route::middleware('auth:sanctum')->get('/user', function () {
     return response()->json(Auth::user());
 });
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/teacher/timetable', [TimetableController::class, 'index']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/admin/timetable', [TimetableController::class, 'store']);
+});
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/timetable', [TimetableController::class, 'adminIndex']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/teacher/timetable', [TimetableController::class, 'teacherTimetable']);
+    Route::get('/teacher/classes', [TeacherController::class, 'getTeacherClasses']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/student/subjects', [StudentController::class, 'mySubjects']);
+    Route::get('/students/{id}/grades', [GradeController::class, 'studentGrades']);
+});
+
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Student applies for leave
+    Route::post('/leave/apply', [LeaveRequestController::class, 'apply']);
+
+    // Student views their own leave requests
+    Route::get('/leave/my-requests', [LeaveRequestController::class, 'studentRequests']);
+
+    // Teacher views leave requests for subjects they teach
+   Route::match(['get', 'patch'], '/leave/teacher-requests', [LeaveRequestController::class, 'RequestsforTeacher']);
+    Route::get('/leave/all', [LeaveRequestController::class, 'allRequests']); // optional for admin
+    // Teacher approves or rejects a leave request
+    Route::patch('/leave/{id}/update-status', [LeaveRequestController::class, 'updateStatus']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/parent/children', [ParentController::class, 'getChildrenOverview']);
+     Route::post('/pay/initiate', [PaymentController::class, 'initiate']);
+     Route::get('/student/{id}/fee', [StudentController::class, 'getFee']);
+});
+
+Route::post('/pay/callback', [PaymentController::class, 'callback'])->name('telebirr.callback');

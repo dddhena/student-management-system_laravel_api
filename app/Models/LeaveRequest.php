@@ -8,14 +8,24 @@ class LeaveRequest extends Model
 {
     protected $fillable = [
         'student_id',
-        'reason',
+        'subject_id',
+        'teacher_id',
         'start_date',
         'end_date',
+        'reason',
         'status',
     ];
 
-    public function student(): BelongsTo
-    {
-        return $this->belongsTo(Student::class);
-    }
+   public function subject() {
+    return $this->belongsTo(Subject::class);
+}
+
+public function teacher() {
+    return $this->belongsTo(Teacher::class);
+}
+
+public function student() {
+    return $this->belongsTo(Student::class);
+}
+
 }

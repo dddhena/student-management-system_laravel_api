@@ -7,6 +7,7 @@ use App\Models\Grade;
 use App\Models\Teacher;
 use App\Models\Student;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class GradeController extends Controller
 {
@@ -41,21 +42,45 @@ class GradeController extends Controller
     return response()->json(['message' => 'Grade recorded', 'grade' => $grade]);
 }
 
-public function studentGrades($studentId)
-{
-    $student = Student::with(['grades.subject', 'grades.teacher'])->findOrFail($studentId);
 
-    return response()->json([
-        'student' => $student->full_name,
-        'grades' => $student->grades->map(function ($grade) {
+
+public function studentGrades(Request $request, $id)
+{
+    $user = $request->user();
+    $student = Student::with('user')->find($id);
+
+    // Validate student existence and role
+    if (!$student || $student->user->role !== 'student') {
+        Log::error("Student not found or invalid role for ID: $id");
+        return response()->json(['error' => 'Student not found'], 404);
+    }
+
+    // Authorization: students can only view their own grades
+    if ($user->role === 'student' && $student->user_id !== $user->id) {
+        Log::warning("Unauthorized access: Student {$user->id} tried to access grades for Student {$id}");
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+
+    // Fetch grades with subject and teacher info
+    $grades = Grade::with(['subject', 'teacher'])
+        ->where('student_id', $id)
+        ->orderByDesc('updated_at')
+        ->get()
+        ->map(function ($grade) {
             return [
-                'subject' => $grade->subject->name,
+                'subject' => $grade->subject->name ?? '—',
                 'exam_type' => $grade->exam_type,
                 'score' => $grade->score,
-                'teacher' => $grade->teacher ? $grade->teacher->full_name : 'N/A',
+                'teacher' => $grade->teacher->full_name ?? '—',
                 'updated_at' => $grade->updated_at->format('Y-m-d'),
             ];
-        }),
+        });
+
+    return response()->json([
+        'student' => $student->user->full_name ?? $student->full_name,
+        'grades' => $grades,
     ]);
 }
+
+
 }

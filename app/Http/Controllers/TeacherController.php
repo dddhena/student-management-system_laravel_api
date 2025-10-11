@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Subject;
+use App\Models\ClassModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
 class TeacherController extends Controller
 {
    public function index()
@@ -151,6 +155,32 @@ public function getTimetable(Request $request)
 }
 
 
+public function timetable(Request $request)
+{
+    $teacherId = $request->user()->id; // get authenticated user's ID
+    $classes = ClassModel::with('subjects')
+        ->where('teacher_id', $teacherId)
+        ->get();
+
+    return response()->json(['timetable' => $classes]);
+}
+
+public function getTeacherClasses()
+{
+    $user = Auth::user();
+    $teacher = $user->teacher;
+
+    if (!$teacher) {
+        Log::error("Teacher profile not found for user ID: {$user->id}");
+        return response()->json(['error' => 'Teacher profile not found'], 403);
+    }
+
+    $classes = ClassModel::with('students.user')
+        ->where('teacher_id', $teacher->id)
+        ->get();
+
+    return response()->json(['classes' => $classes]);
+}
 
 
 }

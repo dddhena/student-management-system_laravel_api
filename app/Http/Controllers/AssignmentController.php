@@ -164,6 +164,7 @@ public function assignedToStudent()
         });
 
     return response()->json($assignments);
+
 }
 
 public function teacherAssignments()

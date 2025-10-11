@@ -6,6 +6,8 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Subject;
+use App\Models\Fee;
 
 class StudentController extends Controller
 {
@@ -87,4 +89,37 @@ class StudentController extends Controller
 
         return response()->json(['message' => 'Student deleted']);
     }
+
+  
+
+public function mySubjects(Request $request)
+{
+    $user = $request->user();
+    Log::info('Authenticated user:', ['id' => $user->id]);
+
+    $student = \App\Models\Student::where('user_id', $user->id)->first();
+
+    if (!$student) {
+        Log::error('No student profile found for user ID: ' . $user->id);
+        return response()->json(['error' => 'Student profile not found'], 404);
+    }
+
+    $subjects = \App\Models\Subject::where('class_id', $student->class_id)->get();
+
+    Log::info('Fetched subjects:', $subjects->toArray());
+
+    return response()->json(['subjects' => $subjects]);
+}
+
+public function getFee($id)
+{
+    $student = Student::findOrFail($id);
+    $fee = Fee::where('student_id', $student->id)->first();
+
+    return response()->json([
+        'amount' => $fee->amount ?? 0
+    ]);
+}
+
+
 }

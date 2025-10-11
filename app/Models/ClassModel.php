@@ -19,13 +19,17 @@ class ClassModel extends Model
         return $this->belongsTo(Teacher::class);
     }
 
-    public function students(): HasMany
-    {
-        return $this->hasMany(Student::class);
-    }
+  // ClassModel.php
+public function students()
+{
+    return $this->hasMany(Student::class, 'class_id'); // explicitly define foreign key
+}
+
 
     public function subjects(): HasMany
     {
         return $this->hasMany(Subject::class);
     }
+  
+
 }
